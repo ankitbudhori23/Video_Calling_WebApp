@@ -1,8 +1,7 @@
 # Meeting App
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-A simple yet powerful meeting app built with React Native, allowing users to host and join video conferences effortlessly.
+A simple yet powerful meeting app built with React and Node, allowing users to host and join video conferences effortlessly.
 
 ## Features
 
@@ -42,7 +41,6 @@ To install and run the app locally, follow these steps:
 - Socket.IO
 - Styled Components
 - React Navigation
-- Firebase Authentication
 
 ## Contributing
 
