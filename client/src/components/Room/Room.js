@@ -5,17 +5,20 @@ import socket from "../../socket";
 import VideoCard from "../Video/VideoCard";
 import BottomBar from "../BottomBar/BottomBar";
 import Chat from "../Chat/Chat";
-
+import toast from "react-hot-toast";
+import ShowAllUSer from "../Chat/ShowAllUser";
 const Room = (props) => {
   const currentUser = sessionStorage.getItem("user");
   const [peers, setPeers] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
   const [userVideoAudio, setUserVideoAudio] = useState({
     localUser: { video: true, audio: true },
   });
   const [videoDevices, setVideoDevices] = useState([]);
+  const [displayUserList, setDisplayUserList] = useState(false);
   const [displayChat, setDisplayChat] = useState(false);
   const [screenShare, setScreenShare] = useState(false);
-  const [screenShareStream, setScreenShareStream] = useState(null);
+  const [userShareScreen, setUserShareScreen] = useState(false);
   const [showVideoDevices, setShowVideoDevices] = useState(false);
   const peersRef = useRef([]);
   const userVideoRef = useRef();
@@ -40,8 +43,17 @@ const Room = (props) => {
         userVideoRef.current.srcObject = stream;
         userStream.current = stream;
         socket.emit("BE-join-room", { roomId, userName: currentUser });
+        socket.on("FE-user-join-msg", (username) => {
+          toast(`${username} joined`, {
+            icon: "👏",
+            style: {
+              borderRadius: "15px",
+            },
+          });
+        });
         socket.on("FE-user-join", (users) => {
           // all users
+          setAllUsers(users);
           const peers = [];
           users.forEach(({ userId, info }) => {
             let { userName, video, audio } = info;
@@ -112,6 +124,15 @@ const Room = (props) => {
           peersRef.current = peersRef.current.filter(
             ({ peerID }) => peerID !== userId
           );
+          setAllUsers((users) =>
+            users.filter((user) => user.userId !== userId)
+          );
+          toast(`${userName} left`, {
+            style: {
+              background: "#333",
+              borderRadius: "15px",
+            },
+          });
         });
       });
 
@@ -129,6 +150,24 @@ const Room = (props) => {
           [peerIdx.userName]: { video, audio },
         };
       });
+    });
+
+    socket.on("FE-share-screen", ({ username, isSharing }) => {
+      setUserShareScreen(isSharing);
+      if (isSharing) {
+        toast(`${username} is sharing screen`, {
+          style: {
+            borderRadius: "15px",
+          },
+        });
+      } else {
+        toast("Screen sharing stopped", {
+          style: {
+            background: "#d34f4f",
+            borderRadius: "15px",
+          },
+        });
+      }
     });
 
     return () => {
@@ -181,23 +220,44 @@ const Room = (props) => {
     return peersRef.current.find((p) => p.peerID === id);
   }
 
+  const expandScreen = (e) => {
+    const elem = e.target;
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen();
+    } else if (elem.mozRequestFullScreen) {
+      /* Firefox */
+      elem.mozRequestFullScreen();
+    } else if (elem.webkitRequestFullscreen) {
+      /* Chrome, Safari & Opera */
+      elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) {
+      /* IE/Edge */
+      elem.msRequestFullscreen();
+    }
+  };
   function createUserVideo(peer, index, arr) {
     return (
       <VideoBox
-        className={`width-peer${peers.length > 8 ? "" : peers.length}`}
-        onClick={expandScreen}
+        className={`width-peer${peers.length > 8 ? "" : peers.length};`}
+        // onClick={userShareScreen ? expandScreen : null}
         key={index}
       >
+        {userShareScreen && <FaIcon className="fas fa-expand" />}
         {writeUserName(peer.userName)}
-        <FaIcon className="fas fa-expand" />
-        <VideoCard key={index} peer={peer} number={arr.length} />
+        <VideoCard
+          key={index}
+          peer={peer}
+          number={arr.length}
+          mic={userVideoAudio[peer.userName]?.audio}
+          video={userVideoAudio[peer.userName]?.video}
+        />
       </VideoBox>
     );
   }
 
   function writeUserName(userName, index) {
     if (userVideoAudio.hasOwnProperty(userName)) {
-      if (!userVideoAudio[userName].video) {
+      if (!userVideoAudio[userName].video && !userShareScreen) {
         return <UserName key={userName}>{userName}</UserName>;
       }
     }
@@ -206,6 +266,11 @@ const Room = (props) => {
   const clickChat = (e) => {
     e.stopPropagation();
     setDisplayChat(!displayChat);
+  };
+
+  const clickUsers = (e) => {
+    e.stopPropagation();
+    setDisplayUserList(!displayUserList);
   };
 
   // BackButton
@@ -232,11 +297,13 @@ const Room = (props) => {
     const target = e.target.getAttribute("data-switch");
     if (target === "video") {
       if (userVideoAudio["localUser"].video === true) {
+        userVideoRef.current.style.display = "none";
         userStream.current.getVideoTracks().forEach((track) => track.stop());
       } else {
         navigator.mediaDevices
           .getUserMedia({ video: true, audio: true })
           .then((stream) => {
+            userVideoRef.current.style.display = "block";
             userVideoRef.current.srcObject = stream;
             userStream.current = stream;
             updatePeerConnections(stream);
@@ -245,6 +312,7 @@ const Room = (props) => {
     } else {
       const userStream = userVideoRef.current?.srcObject;
       if (userStream) {
+        const audioTracks = userStream.getAudioTracks();
         if (audioTracks && audioTracks.length > 0) {
           audioTracks[0].enabled = !userVideoAudio["localUser"].audio;
         } else {
@@ -260,7 +328,11 @@ const Room = (props) => {
       let audioSwitch = preList["localUser"].audio;
 
       if (target === "video") {
-        videoSwitch = !videoSwitch;
+        if (videoSwitch === true) videoSwitch = false;
+        else {
+          videoSwitch = true;
+          audioSwitch = true;
+        }
       } else {
         audioSwitch = !audioSwitch;
       }
@@ -274,48 +346,6 @@ const Room = (props) => {
     socket.emit("BE-toggle-camera-audio", { roomId, switchTarget: target });
   };
 
-  // const clickScreenSharing = () => {
-  //   if (!screenShare) {
-  //     navigator.mediaDevices
-  //       .getDisplayMedia({ cursor: true })
-  //       .then((stream) => {
-  //         const screenTrack = stream.getTracks()[0];
-
-  //         peersRef.current.forEach(({ peer }) => {
-  //           // replaceTrack (oldTrack, newTrack, oldStream);
-  //           peer.replaceTrack(
-  //             peer.streams[0]
-  //               .getTracks()
-  //               .find((track) => track.kind === "video"),
-  //             screenTrack,
-  //             userStream.current
-  //           );
-  //         });
-
-  //         // Listen click end
-  //         screenTrack.onended = () => {
-  //           peersRef.current.forEach(({ peer }) => {
-  //             peer.replaceTrack(
-  //               screenTrack,
-  //               peer.streams[0]
-  //                 .getTracks()
-  //                 .find((track) => track.kind === "video"),
-  //               userStream.current
-  //             );
-  //           });
-  //           userVideoRef.current.srcObject = userStream.current;
-  //           setScreenShare(false);
-  //         };
-
-  //         userVideoRef.current.srcObject = stream;
-  //         screenTrackRef.current = screenTrack;
-  //         setScreenShare(true);
-  //       });
-  //   } else {
-  //     screenTrackRef.current.onended();
-  //   }
-  // };
-
   const clickScreenSharing = () => {
     if (!screenShare) {
       navigator.mediaDevices
@@ -323,19 +353,24 @@ const Room = (props) => {
         .then((stream) => {
           const screenTrack = stream.getTracks()[0];
 
-          // Replace video tracks with screen track for all peer connections
           peersRef.current.forEach(({ peer }) => {
             const senders = peer._pc.getSenders();
+
             senders.forEach((sender) => {
               if (sender.track.kind === "video") {
                 sender.replaceTrack(screenTrack);
               }
             });
           });
-
-          // Listen to screen sharing end event
+          userVideoRef.current.srcObject = stream;
+          screenTrackRef.current = screenTrack;
+          setScreenShare(true);
+          socket.emit("BE-share-screen", {
+            roomId,
+            username: currentUser,
+            isSharing: true,
+          });
           screenTrack.onended = () => {
-            // Replace screen track with video tracks for all peer connections
             peersRef.current.forEach(({ peer }) => {
               const senders = peer._pc.getSenders();
               senders.forEach((sender) => {
@@ -345,35 +380,19 @@ const Room = (props) => {
               });
             });
             userVideoRef.current.srcObject = userStream.current;
+            socket.emit("BE-share-screen", {
+              roomId,
+              currentUser,
+              isSharing: false,
+            });
             setScreenShare(false);
           };
-
-          userVideoRef.current.srcObject = stream;
-          screenTrackRef.current = screenTrack;
-          setScreenShare(true);
         })
         .catch((error) => {
           console.error("Error accessing screen sharing:", error);
         });
     } else {
       screenTrackRef.current.onended();
-    }
-  };
-
-  const expandScreen = (e) => {
-    const elem = e.target;
-
-    if (elem.requestFullscreen) {
-      elem.requestFullscreen();
-    } else if (elem.mozRequestFullScreen) {
-      /* Firefox */
-      elem.mozRequestFullScreen();
-    } else if (elem.webkitRequestFullscreen) {
-      /* Chrome, Safari & Opera */
-      elem.webkitRequestFullscreen();
-    } else if (elem.msRequestFullscreen) {
-      /* IE/Edge */
-      elem.msRequestFullscreen();
     }
   };
 
@@ -408,7 +427,6 @@ const Room = (props) => {
           userStream.current.addTrack(newStreamTrack);
 
           peersRef.current.forEach(({ peer }) => {
-            // replaceTrack (oldTrack, newTrack, oldStream);
             peer.replaceTrack(
               oldStreamTrack,
               newStreamTrack,
@@ -423,23 +441,7 @@ const Room = (props) => {
     <RoomContainer onClick={clickBackground}>
       <VideoAndBarContainer>
         <VideoContainer>
-          {/* Current User Video */}
-          <VideoBox
-            className={`width-peer${peers.length > 8 ? "" : peers.length}`}
-          >
-            {userVideoAudio["localUser"].video ? null : (
-              <UserName>{currentUser}</UserName>
-            )}
-            <FaIcon className="fas fa-expand" />
-            <MyVideo
-              onClick={expandScreen}
-              ref={userVideoRef}
-              muted
-              autoPlay
-              playInline
-            ></MyVideo>
-          </VideoBox>
-          {/* Joined User Vidoe */}
+          <MyVideo ref={userVideoRef} muted autoPlay playInline></MyVideo>
           {peers &&
             peers.map((peer, index, arr) => createUserVideo(peer, index, arr))}
         </VideoContainer>
@@ -454,9 +456,12 @@ const Room = (props) => {
           videoDevices={videoDevices}
           showVideoDevices={showVideoDevices}
           setShowVideoDevices={setShowVideoDevices}
+          showUserList={clickUsers}
+          usersCount={allUsers.length}
         />
       </VideoAndBarContainer>
-      <Chat display={displayChat} roomId={roomId} />
+      <Chat display={displayChat} openChat={setDisplayChat} roomId={roomId} />
+      <ShowAllUSer display={displayUserList} users={allUsers} />
     </RoomContainer>
   );
 };
@@ -471,6 +476,7 @@ const RoomContainer = styled.div`
 const VideoContainer = styled.div`
   max-width: 100%;
   height: 92%;
+  position: relative;
   display: flex;
   flex-direction: row;
   justify-content: space-around;
@@ -480,15 +486,18 @@ const VideoContainer = styled.div`
   box-sizing: border-box;
   gap: 10px;
 `;
-
 const VideoAndBarContainer = styled.div`
   position: relative;
   width: 100%;
   height: 100vh;
 `;
 
-const MyVideo = styled.video``;
-
+const MyVideo = styled.video`
+  width: 250px;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+`;
 const VideoBox = styled.div`
   position: relative;
   display: flex;
@@ -510,15 +519,22 @@ const VideoBox = styled.div`
 
 const UserName = styled.div`
   position: absolute;
-  font-size: calc(20px + 5vmin);
   z-index: 1;
+  background: #673ab7;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 `;
 
 const FaIcon = styled.i`
-  display: none;
   position: absolute;
   right: 15px;
   top: 15px;
+  z-index: 1;
 `;
 
 export default Room;

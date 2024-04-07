@@ -12,6 +12,8 @@ const BottomBar = ({
   videoDevices,
   showVideoDevices,
   setShowVideoDevices,
+  showUserList,
+  usersCount,
 }) => {
   const handleToggle = useCallback(
     (e) => {
@@ -22,37 +24,39 @@ const BottomBar = ({
 
   return (
     <Bar>
-      <Left>
-        <CameraButton onClick={toggleCameraAudio} data-switch="video">
-          <div>
-            {userVideoAudio.video ? (
-              <FaIcon className="fas fa-video"></FaIcon>
-            ) : (
-              <FaIcon className="fas fa-video-slash"></FaIcon>
+      <Center>
+        <div style={{ position: "relative" }}>
+          <CameraButton onClick={toggleCameraAudio} data-switch="video">
+            <div>
+              {userVideoAudio.video ? (
+                <FaIcon className="fas fa-video"></FaIcon>
+              ) : (
+                <FaIcon className="fas fa-video-slash"></FaIcon>
+              )}
+            </div>
+            Camera
+            {showVideoDevices && (
+              <SwitchList>
+                {videoDevices.length > 0 &&
+                  videoDevices.map((device) => {
+                    return (
+                      <div
+                        key={device.deviceId}
+                        onClick={clickCameraDevice}
+                        data-value={device.deviceId}
+                      >
+                        {device.label}
+                      </div>
+                    );
+                  })}
+                <div>Switch Camera</div>
+              </SwitchList>
             )}
-          </div>
-          Camera
-        </CameraButton>
-        {showVideoDevices && (
-          <SwitchList>
-            {videoDevices.length > 0 &&
-              videoDevices.map((device) => {
-                return (
-                  <div
-                    key={device.deviceId}
-                    onClick={clickCameraDevice}
-                    data-value={device.deviceId}
-                  >
-                    {device.label}
-                  </div>
-                );
-              })}
-            <div>Switch Camera</div>
-          </SwitchList>
-        )}
-        <SwitchMenu onClick={handleToggle}>
-          <i className="fas fa-angle-up"></i>
-        </SwitchMenu>
+          </CameraButton>
+          <SwitchMenu onClick={handleToggle}>
+            <i className="fas fa-angle-up"></i>
+          </SwitchMenu>
+        </div>
         <CameraButton onClick={toggleCameraAudio} data-switch="audio">
           <div>
             {userVideoAudio.audio ? (
@@ -63,14 +67,6 @@ const BottomBar = ({
           </div>
           Audio
         </CameraButton>
-      </Left>
-      <Center>
-        <ChatButton onClick={clickChat}>
-          <div>
-            <FaIcon className="fas fa-comments"></FaIcon>
-          </div>
-          Chat
-        </ChatButton>
         <ScreenButton onClick={clickScreenSharing}>
           <div>
             <FaIcon
@@ -79,9 +75,22 @@ const BottomBar = ({
           </div>
           Share Screen
         </ScreenButton>
+        <ChatButton onClick={clickChat}>
+          <div>
+            <FaIcon className="fas fa-comments"></FaIcon>
+          </div>
+          Chat
+        </ChatButton>
+        <ChatButton onClick={showUserList}>
+          <Barge>{usersCount}</Barge>
+          <div>
+            <FaIcon className="fas fa-users"></FaIcon>
+          </div>
+          Participants
+        </ChatButton>
       </Center>
       <Right>
-        <StopButton onClick={goToBack}>Stop</StopButton>
+        <StopButton onClick={goToBack}>Exit</StopButton>
       </Right>
     </Bar>
   );
@@ -97,15 +106,18 @@ const Bar = styled.div`
   justify-content: center;
   align-items: center;
   font-weight: 500;
-  background-color: #4ea1d3;
-`;
-const Left = styled.div`
-  display: flex;
-  align-items: center;
-
-  margin-left: 15px;
+  background-color: #008b8b;
 `;
 
+const Barge = styled.span`
+  background: #673ab7;
+  border-radius: 50px;
+  position: absolute;
+  right: 0px;
+  top: -2px;
+  padding: 5px;
+  font-size: 12px;
+`;
 const Center = styled.div`
   flex: 1;
   display: flex;
@@ -119,9 +131,9 @@ const ChatButton = styled.div`
   border: none;
   font-size: 0.9375rem;
   padding: 5px;
-
+  position: relative;
   :hover {
-    background-color: #77b7dd;
+    background-color: #12aaaa;
     cursor: pointer;
     border-radius: 15px;
   }
@@ -138,7 +150,7 @@ const ScreenButton = styled.div`
   padding: 5px;
 
   :hover {
-    background-color: #77b7dd;
+    background-color: #12aaaa;
     cursor: pointer;
     border-radius: 15px;
   }
@@ -177,7 +189,7 @@ const CameraButton = styled.div`
   padding: 5px;
 
   :hover {
-    background-color: #77b7dd;
+    background-color: #12aaaa;
     cursor: pointer;
     border-radius: 15px;
   }
@@ -199,12 +211,12 @@ const SwitchMenu = styled.div`
   display: flex;
   position: absolute;
   width: 20px;
-  top: 7px;
-  left: 80px;
+  top: 0;
+  right: 0;
   z-index: 1;
 
   :hover {
-    background-color: #476d84;
+    background-color: #12aaaa;
     cursor: pointer;
     border-radius: 15px;
   }
@@ -224,8 +236,7 @@ const SwitchList = styled.div`
   flex-direction: column;
   position: absolute;
   top: -65.95px;
-  left: 80px;
-  background-color: #4ea1d3;
+  background-color: #008b8b;
   color: white;
   padding-top: 5px;
   padding-right: 10px;
@@ -239,7 +250,7 @@ const SwitchList = styled.div`
     margin-bottom: 5px;
 
     :not(:last-child):hover {
-      background-color: #77b7dd;
+      background-color: 008b8b;
       cursor: pointer;
     }
   }

@@ -1,9 +1,9 @@
-import React from 'react';
-import { BrowserRouter, Route, Switch } from 'react-router-dom';
-import Main from './components/Main/Main';
-import Room from './components/Room/Room'
-import styled from 'styled-components';
-
+import React from "react";
+import { BrowserRouter, Route, Switch } from "react-router-dom";
+import Main from "./components/Main/Main";
+import Room from "./components/Room/Room";
+import styled from "styled-components";
+import { Toaster } from "react-hot-toast";
 function App() {
   return (
     <BrowserRouter>
@@ -12,6 +12,17 @@ function App() {
           <Route exact path="/" component={Main} />
           <Route exact path="/room/:roomId" component={Room} />
         </Switch>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 2000,
+            style: {
+              background: "#008b8b",
+              color: "#fff",
+              fontSize: "16px",
+            },
+          }}
+        />
       </AppContainer>
     </BrowserRouter>
   );

@@ -1,39 +1,53 @@
-import React, { useEffect, useState, useRef } from 'react';
-import styled from 'styled-components';
-import socket from '../../socket';
+import React, { useEffect, useState, useRef } from "react";
+import styled from "styled-components";
+import socket from "../../socket";
+import toast from "react-hot-toast";
 
-const Chat = ({ display, roomId }) => {
-  const currentUser = sessionStorage.getItem('user');
+const Chat = ({ display, roomId, openChat }) => {
+  const currentUser = sessionStorage.getItem("user");
   const [msg, setMsg] = useState([]);
   const messagesEndRef = useRef(null);
   const inputRef = useRef();
-  
+
   useEffect(() => {
-    socket.on('FE-receive-message', ({ msg, sender }) => {
+    const receiveMessageHandler = ({ msg, sender }) => {
       setMsg((msgs) => [...msgs, { sender, msg }]);
-    });
-  }, []);
+      if (!display) {
+        toast(
+          <span onClick={() => openChat(true)} style={{ cursor: "pointer" }}>
+            New Message from {sender}
+          </span>
+        );
+      }
+    };
+    socket.on("FE-receive-message", receiveMessageHandler);
+    return () => {
+      socket.off("FE-receive-message", receiveMessageHandler);
+    };
+  }, [display]);
 
   // Scroll to Bottom of Message List
-  useEffect(() => {scrollToBottom()}, [msg])
+  useEffect(() => {
+    scrollToBottom();
+  }, [msg]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current.scrollIntoView({ behavior: 'smooth'});
-  }
+    messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+  };
 
   const sendMessage = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       const msg = e.target.value;
 
       if (msg) {
-        socket.emit('BE-send-message', { roomId, msg, sender: currentUser });
-        inputRef.current.value = '';
+        socket.emit("BE-send-message", { roomId, msg, sender: currentUser });
+        inputRef.current.value = "";
       }
     }
   };
 
   return (
-    <ChatContainer className={display ? '' : 'width0'}>
+    <ChatContainer className={display ? "" : "width0"}>
       <TopHeader>Group Chat Room</TopHeader>
       <ChatArea>
         <MessageList>
@@ -55,7 +69,7 @@ const Chat = ({ display, roomId }) => {
                 );
               }
             })}
-            <div style={{float:'left', clear: 'both'}} ref={messagesEndRef} />
+          <div style={{ float: "left", clear: "both" }} ref={messagesEndRef} />
         </MessageList>
       </ChatArea>
       <BottomInput
