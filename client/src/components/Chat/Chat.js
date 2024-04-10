@@ -48,7 +48,7 @@ const Chat = ({ display, roomId, openChat }) => {
 
   return (
     <ChatContainer className={display ? "" : "width0"}>
-      <TopHeader>Group Chat Room</TopHeader>
+      <TopHeader>Chat Room</TopHeader>
       <ChatArea>
         <MessageList>
           {msg &&
@@ -56,14 +56,14 @@ const Chat = ({ display, roomId, openChat }) => {
               if (sender !== currentUser) {
                 return (
                   <Message key={idx}>
-                    <strong>{sender}</strong>
+                    <Name>{sender}</Name>
                     <p>{msg}</p>
                   </Message>
                 );
               } else {
                 return (
                   <UserMessage key={idx}>
-                    <strong>{sender}</strong>
+                    <Name>You</Name>
                     <p>{msg}</p>
                   </UserMessage>
                 );
@@ -91,6 +91,11 @@ const ChatContainer = styled.div`
   overflow: hidden;
 `;
 
+const Name = styled.span`
+  font-size: 13px;
+  color: black;
+`;
+
 const TopHeader = styled.div`
   width: 100%;
   margin-top: 15px;
@@ -109,10 +114,8 @@ const ChatArea = styled.div`
 
 const MessageList = styled.div`
   display: flex;
-  width: 100%;
   flex-direction: column;
-  padding: 15px;
-  color: #454552;
+  padding: 10px;
 `;
 
 const Message = styled.div`
@@ -122,22 +125,16 @@ const Message = styled.div`
   align-items: flex-start;
   font-size: 16px;
   margin-top: 15px;
-  margin-left: 15px;
   text-align: left;
-
-  > strong {
-    margin-left: 3px;
-  }
 
   > p {
     max-width: 65%;
     width: auto;
-    padding: 9px;
-    margin-top: 3px;
-    border: 1px solid rgb(78, 161, 211, 0.3);
-    border-radius: 15px;
-    box-shadow: 0px 0px 3px #4ea1d3;
+    padding: 7px;
+    border-radius: 7px;
     font-size: 14px;
+    background: darkcyan;
+    color: white;
   }
 `;
 
@@ -150,19 +147,12 @@ const UserMessage = styled.div`
   margin-top: 15px;
   text-align: right;
 
-  > strong {
-    margin-right: 35px;
-  }
-
   > p {
     max-width: 65%;
     width: auto;
-    padding: 9px;
-    margin-top: 3px;
-    margin-right: 30px;
-    border: 1px solid rgb(78, 161, 211, 0.3);
-    border-radius: 15px;
-    background-color: #4ea1d3;
+    padding: 7px;
+    border-radius: 7px;
+    background-color: #2196f3;
     color: white;
     font-size: 14px;
     text-align: left;

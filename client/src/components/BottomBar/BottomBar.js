@@ -73,7 +73,7 @@ const BottomBar = ({
               className={`fas fa-desktop ${screenShare ? "sharing" : ""}`}
             ></FaIcon>
           </div>
-          Share Screen
+          {screenShare ? "Stop Share" : "Share Screen"}
         </ScreenButton>
         <ChatButton onClick={clickChat}>
           <div>
@@ -90,7 +90,7 @@ const BottomBar = ({
         </ChatButton>
       </Center>
       <Right>
-        <StopButton onClick={goToBack}>Exit</StopButton>
+        <StopButton onClick={goToBack}>End Call</StopButton>
       </Right>
     </Bar>
   );
@@ -107,6 +107,7 @@ const Bar = styled.div`
   align-items: center;
   font-weight: 500;
   background-color: #008b8b;
+  z-index: 100;
 `;
 
 const Barge = styled.span`

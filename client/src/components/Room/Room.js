@@ -10,7 +10,6 @@ import ShowAllUSer from "../Chat/ShowAllUser";
 const Room = (props) => {
   const currentUser = sessionStorage.getItem("user");
   const [peers, setPeers] = useState([]);
-  const [allUsers, setAllUsers] = useState([]);
   const [userVideoAudio, setUserVideoAudio] = useState({
     localUser: { video: true, audio: true },
   });
@@ -43,17 +42,15 @@ const Room = (props) => {
         userVideoRef.current.srcObject = stream;
         userStream.current = stream;
         socket.emit("BE-join-room", { roomId, userName: currentUser });
-        socket.on("FE-user-join-msg", (username) => {
-          toast(`${username} joined`, {
+
+        socket.on("FE-user-join", (users, userName) => {
+          toast(`${userName} joined`, {
             icon: "👏",
             style: {
               borderRadius: "15px",
             },
           });
-        });
-        socket.on("FE-user-join", (users) => {
           // all users
-          setAllUsers(users);
           const peers = [];
           users.forEach(({ userId, info }) => {
             let { userName, video, audio } = info;
@@ -79,7 +76,6 @@ const Room = (props) => {
               });
             }
           });
-
           setPeers(peers);
         });
 
@@ -124,9 +120,13 @@ const Room = (props) => {
           peersRef.current = peersRef.current.filter(
             ({ peerID }) => peerID !== userId
           );
-          setAllUsers((users) =>
-            users.filter((user) => user.userId !== userId)
-          );
+          setUserVideoAudio((preList) => {
+            const updatedList = Object.fromEntries(
+              Object.entries(preList).filter(([key]) => key !== userName)
+            );
+            return updatedList;
+          });
+
           toast(`${userName} left`, {
             style: {
               background: "#333",
@@ -238,8 +238,8 @@ const Room = (props) => {
   function createUserVideo(peer, index, arr) {
     return (
       <VideoBox
-        className={`width-peer${peers.length > 8 ? "" : peers.length};`}
-        // onClick={userShareScreen ? expandScreen : null}
+        style={{ width: "350px" }}
+        onClick={userShareScreen ? expandScreen : null}
         key={index}
       >
         {userShareScreen && <FaIcon className="fas fa-expand" />}
@@ -247,7 +247,6 @@ const Room = (props) => {
         <VideoCard
           key={index}
           peer={peer}
-          number={arr.length}
           mic={userVideoAudio[peer.userName]?.audio}
           video={userVideoAudio[peer.userName]?.video}
         />
@@ -457,11 +456,11 @@ const Room = (props) => {
           showVideoDevices={showVideoDevices}
           setShowVideoDevices={setShowVideoDevices}
           showUserList={clickUsers}
-          usersCount={allUsers.length}
+          usersCount={Object.keys(userVideoAudio).length}
         />
       </VideoAndBarContainer>
       <Chat display={displayChat} openChat={setDisplayChat} roomId={roomId} />
-      <ShowAllUSer display={displayUserList} users={allUsers} />
+      <ShowAllUSer display={displayUserList} users={userVideoAudio} />
     </RoomContainer>
   );
 };
@@ -478,6 +477,7 @@ const VideoContainer = styled.div`
   height: 92%;
   position: relative;
   display: flex;
+  overflow: auto;
   flex-direction: row;
   justify-content: space-around;
   flex-wrap: wrap;

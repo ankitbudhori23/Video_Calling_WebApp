@@ -35,18 +35,18 @@ io.on("connection", (socket) => {
     console.log("User disconnected!");
   });
 
-  // socket.on("BE-check-user", ({ roomId, userName }) => {
-  //   let error = false;
+  socket.on("BE-check-user", ({ roomId, userName }) => {
+    let error = false;
 
-  //   io.sockets.in(roomId).clients((err, clients) => {
-  //     clients.forEach((client) => {
-  //       if (socketList[client] == userName) {
-  //         error = true;
-  //       }
-  //     });
-  //     socket.emit("FE-error-user-exist", { error });
-  //   });
-  // });
+    io.sockets.in(roomId).clients((err, clients) => {
+      clients.forEach((client) => {
+        if (socketList[client] == userName) {
+          error = true;
+        }
+      });
+      socket.emit("FE-error-user-exist", { error });
+    });
+  });
 
   // Join Room
   socket.on("BE-join-room", ({ roomId, userName }) => {
