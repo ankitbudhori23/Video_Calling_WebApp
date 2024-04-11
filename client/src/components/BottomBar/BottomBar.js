@@ -34,7 +34,7 @@ const BottomBar = ({
                 <FaIcon className="fas fa-video-slash"></FaIcon>
               )}
             </div>
-            Camera
+            <Text>Camera</Text>
             {showVideoDevices && (
               <SwitchList>
                 {videoDevices.length > 0 &&
@@ -65,7 +65,7 @@ const BottomBar = ({
               <FaIcon className="fas fa-microphone-slash"></FaIcon>
             )}
           </div>
-          Audio
+          <Text>Audio</Text>
         </CameraButton>
         <ScreenButton onClick={clickScreenSharing}>
           <div>
@@ -73,24 +73,28 @@ const BottomBar = ({
               className={`fas fa-desktop ${screenShare ? "sharing" : ""}`}
             ></FaIcon>
           </div>
-          {screenShare ? "Stop Share" : "Share Screen"}
+          {screenShare ? <Text>Stop Sharing</Text> : <Text>Share Screen</Text>}
         </ScreenButton>
         <ChatButton onClick={clickChat}>
           <div>
             <FaIcon className="fas fa-comments"></FaIcon>
           </div>
-          Chat
+          <Text>Chat</Text>
         </ChatButton>
         <ChatButton onClick={showUserList}>
-          <Barge>{usersCount}</Barge>
+          <Barge>
+            <Text>{usersCount}</Text>
+          </Barge>
           <div>
             <FaIcon className="fas fa-users"></FaIcon>
           </div>
-          Participants
+          <Text>Participants</Text>
         </ChatButton>
       </Center>
       <Right>
-        <StopButton onClick={goToBack}>End Call</StopButton>
+        <StopButton onClick={goToBack}>
+          <Text>End Call</Text>
+        </StopButton>
       </Right>
     </Bar>
   );
@@ -101,7 +105,6 @@ const Bar = styled.div`
   right: 0;
   bottom: 0;
   width: 100%;
-  height: 8%;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -109,18 +112,23 @@ const Bar = styled.div`
   background-color: #008b8b;
   z-index: 100;
 `;
-
+const Text = styled.span`
+  font-size: 13px;
+  @media (max-width: 700px) {
+    font-size: 11px;
+  }
+`;
 const Barge = styled.span`
   background: #673ab7;
   border-radius: 50px;
   position: absolute;
   right: 0px;
   top: -2px;
-  padding: 5px;
-  font-size: 12px;
+  padding: 3px;
 `;
 const Center = styled.div`
   flex: 1;
+  flex-wrap: wrap;
   display: flex;
   justify-content: center;
 `;
@@ -162,12 +170,15 @@ const ScreenButton = styled.div`
 `;
 
 const FaIcon = styled.i`
-  width: 30px;
-  font-size: calc(16px + 1vmin);
+  font-size: 20px;
+
+  @media (max-width: 700px) {
+    font-size: 16px;
+  }
 `;
 
 const StopButton = styled.div`
-  width: 75px;
+  width: 70px;
   height: 30px;
   border: none;
   font-size: 0.9375rem;
