@@ -18,7 +18,7 @@ To install and run the app locally, follow these steps:
 
 1. Clone the repository:
 2. Navigate to the project directory:
-3. Install dependencies:
+3. Install dependencies:fg
 
 
 4. Run the app:
